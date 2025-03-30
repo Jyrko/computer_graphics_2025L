@@ -130,21 +130,20 @@ func GammaCorrection(src *image.RGBA, gamma float64) *image.RGBA {
 }
 
 
-// ApplyFunctionalFilter applies a custom transfer function defined by control points
 func ApplyFunctionalFilter(src *image.RGBA, points []Point) *image.RGBA {
 	bounds := src.Bounds()
 	result := image.NewRGBA(bounds)
 
-	// Sort points by X coordinate
+
 	sort.Slice(points, func(i, j int) bool {
 			return points[i].X < points[j].X
 	})
 
-	// Create lookup table
+
 	var lookup [256]uint8
 	for i := 0; i < 256; i++ {
 			x := float64(i)
-			// Find surrounding points
+		
 			var p1, p2 Point
 			for j := 0; j < len(points)-1; j++ {
 					if x >= points[j].X && x <= points[j+1].X {
@@ -153,15 +152,15 @@ func ApplyFunctionalFilter(src *image.RGBA, points []Point) *image.RGBA {
 					}
 			}
 			
-			// Linear interpolation
+		
 			t := (x - p1.X) / (p2.X - p1.X)
 			y := p1.Y + t*(p2.Y-p1.Y)
 			
-			// Clamp values
+		
 			lookup[i] = uint8(utils.Clamp(int(y), 0, 255))
 	}
 
-	// Apply lookup table to image
+
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 			for x := bounds.Min.X; x < bounds.Max.X; x++ {
 					originalColor := src.At(x, y)

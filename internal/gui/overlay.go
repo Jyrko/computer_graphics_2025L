@@ -28,6 +28,9 @@ func NewFilterOverlay() *FilterOverlay {
         "contrast":   {0, 3, 1, 0.1, "Contrast"},
         "gamma":      {0.1, 3, 1, 0.1, "Gamma"},
         "saturation": {0, 2, 1, 0.1, "Saturation"},
+        "dither_levels": {2, 8, 2, 1, "Dither Levels"},
+        "dither_size":   {2, 6, 2, 1, "Dither Map Size"},
+        "num_colors":    {2, 256, 16, 1, "Number of Colors"},
     }
 
     var elements []fyne.CanvasObject
@@ -68,6 +71,27 @@ func NewFilterOverlay() *FilterOverlay {
     })
     
     elements = append(elements, resetBtn)
+
+    grayscaleBtn := widget.NewButton("Convert to Grayscale", func() {
+        if f.onUpdate != nil {
+            f.onUpdate("grayscale", 0)
+        }
+    })
+
+    ditherBtn := widget.NewButton("Apply Dithering", func() {
+        if f.onUpdate != nil {
+            f.onUpdate("dither", f.values["dither_levels"])
+        }
+    })
+
+    quantizeBtn := widget.NewButton("Quantize Colors", func() {
+        if f.onUpdate != nil {
+            f.onUpdate("quantize", f.values["num_colors"])
+        }
+    })
+
+    elements = append(elements, grayscaleBtn, ditherBtn, quantizeBtn)
+    
     f.container = container.NewVBox(elements...)
     
     return f

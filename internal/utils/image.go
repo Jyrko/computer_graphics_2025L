@@ -5,7 +5,6 @@ import (
 	"image/draw"
 )
 
-// ToRGBA converts any image.Image to *image.RGBA format
 func ToRGBA(src image.Image) *image.RGBA {
     bounds := src.Bounds()
     rgba := image.NewRGBA(bounds)
@@ -13,7 +12,6 @@ func ToRGBA(src image.Image) *image.RGBA {
     return rgba
 }
 
-// Clamp ensures an integer value stays within the given range
 func Clamp(value, min, max int) int {
     if value < min {
         return min
@@ -24,7 +22,6 @@ func Clamp(value, min, max int) int {
     return value
 }
 
-// ClampFloat ensures a float32 value stays within the given range
 func ClampFloat(value, min, max float32) float32 {
     if value < min {
         return min

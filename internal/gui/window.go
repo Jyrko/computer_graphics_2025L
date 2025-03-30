@@ -5,6 +5,7 @@ import (
 	"image-filter-editor/internal/filters"
 	"image-filter-editor/internal/utils"
 
+	"image/color"
 	"image/png"
 
 	"fyne.io/fyne/v2"
@@ -18,11 +19,19 @@ type MainWindow struct {
 	image      *canvas.Image
 	currentImg *image.RGBA
 	origImg    image.Image
+	filterCanvas  *canvas.Rectangle
+	filterOverlay *FilterOverlay
+	filterPoints  []filters.Point
 }
+
 
 func NewMainWindow(app fyne.App) *MainWindow {
     w := &MainWindow{
         window: app.NewWindow("Image Filtering App"),
+				filterPoints: []filters.Point{ 
+					{X: 0, Y: 0},
+					{X: 255, Y: 255},
+			},
     }
 
     w.image = canvas.NewImageFromImage(nil)
@@ -33,11 +42,37 @@ func NewMainWindow(app fyne.App) *MainWindow {
     scroll.SetMinSize(fyne.NewSize(800, 600))
 
     buttons := w.createButtons()
-    content := container.NewVBox(buttons, scroll)
     
-    w.window.SetContent(content)
     w.window.Resize(fyne.NewSize(800, 600))
 
+		 w.filterCanvas = canvas.NewRectangle(color.White)
+		 w.filterCanvas.Resize(fyne.NewSize(256, 256))
+		 
+		 w.filterOverlay = NewFilterOverlay()
+    w.filterOverlay.SetOnUpdate(func(param string, value float64) {
+        if w.currentImg == nil {
+            return
+        }
+        
+        switch param {
+        case "brightness":
+            w.currentImg = filters.BrightnessCorrection(w.currentImg, int(value))
+        case "contrast":
+            w.currentImg = filters.ContrastEnhancement(w.currentImg, value)
+        case "gamma":
+            w.currentImg = filters.GammaCorrection(w.currentImg, value)
+        }
+        
+        w.image.Image = w.currentImg
+        w.image.Refresh()
+    })
+
+    content := container.NewHSplit(
+        container.NewVBox(buttons, scroll),
+        w.filterOverlay.GetContainer(),
+    )
+
+    w.window.SetContent(content)
     return w
 }
 

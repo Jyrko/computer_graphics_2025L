@@ -5,6 +5,7 @@ import (
 	"image-filter-editor/internal/utils"
 	"image/color"
 	"math"
+	"sort"
 )
 
 const (
@@ -12,6 +13,10 @@ const (
     CONTRAST_FACTOR   = 1.5   
     GAMMA_FACTOR      = 1.8   
 )
+
+type Point struct {
+	X, Y float64
+}
 
 func InvertImage(src *image.RGBA) *image.RGBA {
 	bounds := src.Bounds()
@@ -124,3 +129,52 @@ func GammaCorrection(src *image.RGBA, gamma float64) *image.RGBA {
 	return result
 }
 
+
+// ApplyFunctionalFilter applies a custom transfer function defined by control points
+func ApplyFunctionalFilter(src *image.RGBA, points []Point) *image.RGBA {
+	bounds := src.Bounds()
+	result := image.NewRGBA(bounds)
+
+	// Sort points by X coordinate
+	sort.Slice(points, func(i, j int) bool {
+			return points[i].X < points[j].X
+	})
+
+	// Create lookup table
+	var lookup [256]uint8
+	for i := 0; i < 256; i++ {
+			x := float64(i)
+			// Find surrounding points
+			var p1, p2 Point
+			for j := 0; j < len(points)-1; j++ {
+					if x >= points[j].X && x <= points[j+1].X {
+							p1, p2 = points[j], points[j+1]
+							break
+					}
+			}
+			
+			// Linear interpolation
+			t := (x - p1.X) / (p2.X - p1.X)
+			y := p1.Y + t*(p2.Y-p1.Y)
+			
+			// Clamp values
+			lookup[i] = uint8(utils.Clamp(int(y), 0, 255))
+	}
+
+	// Apply lookup table to image
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+			for x := bounds.Min.X; x < bounds.Max.X; x++ {
+					originalColor := src.At(x, y)
+					r, g, b, a := originalColor.RGBA()
+					
+					result.Set(x, y, color.RGBA{
+							R: lookup[r>>8],
+							G: lookup[g>>8],
+							B: lookup[b>>8],
+							A: uint8(a>>8),
+					})
+			}
+	}
+
+	return result
+}

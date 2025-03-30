@@ -1,6 +1,8 @@
 package gui
 
 import (
+	"fmt"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
@@ -10,6 +12,7 @@ type FilterOverlay struct {
     container *fyne.Container
     sliders   map[string]*widget.Slider
     values    map[string]float64
+    labels    map[string]*widget.Label
     onUpdate  func(string, float64)
 }
 
@@ -17,6 +20,7 @@ func NewFilterOverlay() *FilterOverlay {
     f := &FilterOverlay{
         sliders: make(map[string]*widget.Slider),
         values:  make(map[string]float64),
+        labels:  make(map[string]*widget.Label),
     }
     
     
@@ -37,46 +41,49 @@ func NewFilterOverlay() *FilterOverlay {
     
     
     for id, config := range sliderConfigs {
-        label := widget.NewLabel(config.label)
+        nameLabel := widget.NewLabel(config.label)
+        valueLabel := widget.NewLabel(formatValue(config.value))
+        f.labels[id] = valueLabel
+        
         slider := widget.NewSlider(config.min, config.max)
         slider.Step = config.step
         slider.Value = config.value
         f.values[id] = config.value
-        
-        
         f.sliders[id] = slider
         
-        
-        id := id 
+        id := id
         slider.OnChanged = func(v float64) {
             f.values[id] = v
+            f.labels[id].SetText(formatValue(v))
             if f.onUpdate != nil {
                 f.onUpdate(id, v)
             }
         }
         
-        elements = append(elements, label, slider)
+
+        sliderContainer := container.NewBorder(nil, nil, nil, valueLabel, slider)
+        elements = append(elements, nameLabel, sliderContainer)
     }
 
-    
     resetBtn := widget.NewButton("Reset All", func() {
         for id, config := range sliderConfigs {
             f.sliders[id].Value = config.value
             f.values[id] = config.value
+            f.labels[id].SetText(formatValue(config.value))
             f.sliders[id].Refresh()
             if f.onUpdate != nil {
                 f.onUpdate(id, config.value)
             }
         }
     })
-    
-    elements = append(elements, resetBtn)
 
     grayscaleBtn := widget.NewButton("Convert to Grayscale", func() {
         if f.onUpdate != nil {
             f.onUpdate("grayscale", 0)
         }
     })
+
+    elements = append(elements, resetBtn)
 
     ditherBtn := widget.NewButton("Apply Dithering", func() {
         if f.onUpdate != nil {
@@ -91,7 +98,7 @@ func NewFilterOverlay() *FilterOverlay {
     })
 
     elements = append(elements, grayscaleBtn, ditherBtn, quantizeBtn)
-    
+
     f.container = container.NewVBox(elements...)
     
     return f
@@ -107,4 +114,11 @@ func (f *FilterOverlay) SetOnUpdate(callback func(param string, value float64)) 
 
 func (f *FilterOverlay) GetValue(param string) float64 {
     return f.values[param]
+}
+
+func formatValue(value float64) string {
+    if value == float64(int(value)) {
+        return fmt.Sprintf("%.0f", value)
+    }
+    return fmt.Sprintf("%.1f", value)
 }

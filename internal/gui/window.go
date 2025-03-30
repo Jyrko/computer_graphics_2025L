@@ -61,6 +61,15 @@ func NewMainWindow(app fyne.App) *MainWindow {
             w.currentImg = filters.ContrastEnhancement(w.currentImg, value)
         case "gamma":
             w.currentImg = filters.GammaCorrection(w.currentImg, value)
+				case "grayscale":
+            w.currentImg = filters.ToGrayscale(w.currentImg)
+        case "dither":
+            mapSize := int(w.filterOverlay.GetValue("dither_size"))
+            levels := int(value)
+            w.currentImg = filters.OrderedDithering(w.currentImg, mapSize, levels)
+        case "quantize":
+            numColors := int(value)
+            w.currentImg = filters.PopularityQuantization(w.currentImg, numColors)
         }
         
         w.image.Image = w.currentImg

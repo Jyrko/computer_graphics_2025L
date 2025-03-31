@@ -43,7 +43,7 @@ func NewMainWindow(app fyne.App) *MainWindow {
 
     buttons := w.createButtons()
     
-    w.window.Resize(fyne.NewSize(800, 600))
+    w.window.Resize(fyne.NewSize(1500, 600))
 
 		 w.filterCanvas = canvas.NewRectangle(color.White)
 		 w.filterCanvas.Resize(fyne.NewSize(256, 256))
@@ -192,11 +192,21 @@ func (w *MainWindow) createButtons() *fyne.Container {
 			}
 	})
 
+	ycbcrBtn := widget.NewButton("YCbCr + Dithering", func() {
+		if w.currentImg != nil {
+				w.currentImg = filters.YCbCrDithering(w.currentImg)
+				w.image.Image = w.currentImg
+				w.image.Refresh()
+		}
+})
+
+
+
 	return container.NewVBox(
 			container.NewHBox(loadBtn, saveBtn, resetBtn),
 			container.NewHBox(invertBtn, brightnessBtn, contrastBtn, gammaBtn),
 			container.NewHBox(blurBtn, gaussianBtn, sharpenBtn, edgeBtn, embossBtn),
-			container.NewHBox(dilateBtn, erodeBtn),
+			container.NewHBox(dilateBtn, erodeBtn, ycbcrBtn),
 	)
 }
 

@@ -33,7 +33,7 @@ func NewFilterOverlay() *FilterOverlay {
         "gamma":      {0.1, 3, 1, 0.1, "Gamma"},
         "saturation": {0, 2, 1, 0.1, "Saturation"},
         "dither_levels": {2, 8, 2, 1, "Dither Levels"},
-        "dither_size":   {2, 6, 2, 1, "Dither Map Size"},
+        "dither_size":   {2, 8, 2, 2, "Dither Map Size"},
         "num_colors":    {2, 256, 16, 1, "Number of Colors"},
     }
 

@@ -99,7 +99,7 @@ func PopularityQuantization(src *image.RGBA, numColors int) *image.RGBA {
 }
 
 func makeThresholdMap(size int) [][]float64 {
-  
+//   FIXME: Use static values
     basic := [][]float64{
         {0.0, 0.5},
         {0.75, 0.25},
@@ -127,12 +127,13 @@ func makeThresholdMap(size int) [][]float64 {
 }
 
 func ditherValue(value uint8, threshold, step float64) uint8 {
+    // divide by step and take the fractional part 
     normalized := float64(value) / 255.0
     if normalized > threshold {
-        level := int((normalized * 255.0) / step)
+        level := int((normalized * 255.0) / step) + 1
         return uint8(utils.Clamp(level*int(step), 0, 255))
     }
-    level := int((normalized * 255.0) / step) - 1
+    level := int((normalized * 255.0) / step)
     return uint8(utils.Clamp(level*int(step), 0, 255))
 }
 
@@ -156,4 +157,56 @@ func colorDistance(c1, c2 color.RGBA) float64 {
     dg := float64(c1.G) - float64(c2.G)
     db := float64(c1.B) - float64(c2.B)
     return dr*dr + dg*dg + db*db
+}
+
+
+func YCbCrDithering(src *image.RGBA) *image.RGBA {
+    bounds := src.Bounds()
+    result := image.NewRGBA(bounds)
+    
+    ycbcr := make([][3]float64, bounds.Dx()*bounds.Dy())
+    idx := 0
+    for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+        for x := bounds.Min.X; x < bounds.Max.X; x++ {
+            r, g, b, _ := src.At(x, y).RGBA()
+            r8, g8, b8 := float64(r>>8), float64(g>>8), float64(b>>8)
+        
+            y_val := 0.299*r8 + 0.587*g8 + 0.114*b8
+            cb := 128 - 0.168736*r8 - 0.331264*g8 + 0.5*b8
+            cr := 128 + 0.5*r8 - 0.418688*g8 - 0.081312*b8
+            
+            ycbcr[idx] = [3]float64{y_val, cb, cr}
+            idx++
+        }
+    }
+    
+    thresholdMap := makeThresholdMap(3)
+    step := 255.0 / 2.0
+    
+    idx = 0
+    for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+        for x := bounds.Min.X; x < bounds.Max.X; x++ {
+            threshold := thresholdMap[y%3][x%3]
+            
+        
+            y_val := ditherValue(uint8(ycbcr[idx][0]), threshold, step)
+            cb, cr := ycbcr[idx][1], ycbcr[idx][2]
+            
+        
+            r := float64(y_val) + 1.402*(cr-128)
+            g := float64(y_val) - 0.344136*(cb-128) - 0.714136*(cr-128)
+            b := float64(y_val) + 1.772*(cb-128)
+            
+        
+            result.Set(x, y, color.RGBA{
+                R: uint8(utils.Clamp(int(r), 0, 255)),
+                G: uint8(utils.Clamp(int(g), 0, 255)),
+                B: uint8(utils.Clamp(int(b), 0, 255)),
+                A: 255,
+            })
+            idx++
+        }
+    }
+    
+    return result
 }
